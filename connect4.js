@@ -1,68 +1,80 @@
 var restart = function(){
-    document.getElementById("game").innerHTML = "";
-    createBoard(7,6);
+    model.init(7, 6);
+    view.init();
 }
 
-var createBoard = function() {
-    var board = new Board(7, 6);
+window.onload = function() {
+    restart();
 }
 
-var Board = function(row, col) {
-    var count = 0;
-    var startPos = new Array(col);
-    startPos.fill(row - 1);
+var model = {
+    init: function(row, col) {
+        var i;
+        var j;
+        var line;
 
-    var cells = [];
-    for(var i = 0; i < row; i++) {
-        var line = [];
-        for(var j = 0; j < col; j++) {
-            line.push(0);
+        this.row = row;
+        this.col = col;
+        this.count = 0;
+        this.startPos = new Array(col);
+        this.startPos.fill(row - 1);
+        this.markCol;
+        this.markRow;
+
+        this.cells = [];
+        for(i = 0; i < row; i++) {
+            line = [];
+            for(j = 0; j < col; j++) {
+                line.push(0);
+            }
+            this.cells.push(line);
         }
-        cells.push(line);
     }
+}
 
-    var table = document.createElement("table");
-    table.id = "board";
-    for (var i = 0; i < row; i++) {
-        var tr = document.createElement('tr');
-        for (var j = 0; j < col; j++) {
-            var td = document.createElement('td');
-            var div = document.createElement('div');
-            div.setAttribute('data-row-id', i);
-            div.setAttribute('data-col-id', j);
-            td.appendChild(div);
-            tr.appendChild(td);
+var control = {
+    getRow : function() {
+        return model.row;
+    },
+
+    getCol: function() {
+        return model.col;
+    },
+
+    mark: function(colIdx) {
+        model.markCol = colIdx;
+        model.markRow = model.startPos[colIdx];
+        model.cells[model.markRow][model.markCol] = this.getPlayer();
+        model.count++;
+        model.startPos[colIdx]--;
+    },
+
+    getMarkCol: function() {
+        return model.markCol;
+    },
+
+    getMarkRow: function() {
+        return model.markRow;
+    },
+
+    getColor: function() {
+        return model.count % 2 == 0 ? "red" : "blue";
+    },
+
+    getPlayer: function() {
+        return model.count % 2 + 1;
+    },
+
+    win: function () {
+        var i, j;
+        var row = model.row,
+            col = model.col,
+            board = model.cells;
+
+        var check = function(a, b, c, d) {
+            return a != 0 && a == b && b == c && c == d;
         }
-        table.appendChild(tr);
-    }
 
-    table.onclick = function(ev) {
-        var rowId = ev.target.parentElement.parentElement.rowIndex;
-        var colId = ev.target.parentElement.cellIndex
-        mark(rowId, colId);
-        if(win(cells, row, col)) {
-            alert(getPlayer(count) + ' win');
-            table.style.pointerEvents = 'none';
-        }
-        count++;
-        startPos[colId]--;
-    }
-    document.getElementById("game").appendChild(table);
-
-
-    var mark = function(rowId, colId) {
-        var color = (count % 2 == 0) ? "red" : "blue";
-        var markRow = startPos[colId];
-        var cell = document.querySelector('[data-row-id="' + markRow + '"][data-col-id="' + colId + '"]');
-        cell.style.background = color;
-        cells[markRow][colId] = getPlayer(count);
-    }
-
-    var getPlayer = function(count) {
-        return count % 2 + 1;
-    }
-    
-    var win = function (board, row, col) {
         for(i = 0; i < row; i++) {
             for(j = 0; j < col - 3; j++) {
                 if(check(board[i][j], board[i][j+ 1], board[i][j + 2], board[i][j + 3])) {
@@ -73,8 +85,6 @@ var Board = function(row, col) {
         for(i = 0; i < row - 3; i++) {
             for(j = 0; j < col; j++) {
                 if(check(board[i][j], board[i + 1][j], board[i + 2][j], board[i + 3][j])) {
-                    console.log(i +  " " + j);
-                    console.log(board);
                     return true;
                 }
             }
@@ -97,9 +107,47 @@ var Board = function(row, col) {
         }
         return false;
     }
-
-    var check = function(a, b, c, d) {
-        return a != 0 && a == b && b == c && c == d;
-    }
 }
 
+var view = {
+    init: function() {
+        this.table = document.getElementById("board");
+
+        var that = this;
+        this.table.onclick = function(ev) {
+            control.mark(ev.target.parentElement.cellIndex);
+            that.mark();
+
+            if(control.win()) {
+                alert(control.getPlayer() + ' win');
+                table.style.pointerEvents = 'none';
+            }
+        }
+        
+        this.render();
+    },
+
+    mark: function() {
+        var cell = document.querySelector('[data-row-id="' + control.getMarkRow() 
+            + '"][data-col-id="' + control.getMarkCol() + '"]');
+        cell.style.background = control.getColor();
+    },
+
+    render: function() {
+        var i, j, tr, td, div;
+        this.table.innerHTML = "";
+
+        for (i = 0; i < control.getRow(); i++) {
+            tr = document.createElement('tr');
+            for (j = 0; j < control.getCol(); j++) {
+                td = document.createElement('td');
+                div = document.createElement('div');
+                div.setAttribute('data-row-id', i);
+                div.setAttribute('data-col-id', j);
+                td.appendChild(div);
+                tr.appendChild(td);
+            }
+            this.table.appendChild(tr);
+        }
+    }
+}
