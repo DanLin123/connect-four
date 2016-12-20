@@ -4,4 +4,4 @@ Connect Four is a two-player connection game in which the players first choose a
 
 Check the demo on http://lindanxmu.github.io/projects/connect4/connect4.html
 
-This implemented in javascrit with MVC style.
+This is implemented in javascrit with MVC style.
